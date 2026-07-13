@@ -2,6 +2,7 @@
 type: Note
 related_to: "[[tolaria]]"
 status: Active
+_width: wide
 ---
 
 # Kilo Setup
