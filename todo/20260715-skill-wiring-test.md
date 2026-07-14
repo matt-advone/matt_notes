@@ -9,6 +9,6 @@ assignee: "Matt Perzel"
 
 # Verify auto-todos skill wired to matt-notes-digest
 
-Test entry — delete after confirming the digest picks it up.
+By 2026-07-15, confirm the auto-todos → digest pipeline works end-to-end.
 
 - [ ] Confirm this line shows in 🎯 DUE SOON section of `digest_orchestrator.py --dry-run`
