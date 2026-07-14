@@ -49,5 +49,10 @@ Pipeline: SES email → S3 `advone-geotab-shipping` → parser Lambda →
 
 ## Next up
 - Re-drive the 24 failed parsed files through api-writer now that rate-limit cleared.
+  Scripts moved into the repo for reuse:
+  - `scripts/fix-zoho-tokens.sh` — regenerates Zoho refresh token + writes to Secrets Manager
+    (lists required scopes comma-separated, verifies token before persisting, --dry-run)
+  - `scripts/redrive-api-writer.sh` — re-drives failed POs sequentially (hard-abort on failure)
+    supports `--keys-file po-keys.json` for custom PO lists, falls back to built-in 24
 - Fix: shared/cached Zoho token + retry/backoff on OAuth "too many requests" + DLQ/errors
   so EventBridge retries app-level failures.
