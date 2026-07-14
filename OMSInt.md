@@ -2,6 +2,7 @@
 type: ProjectStatus
 related_to: "[[tolaria]]"
 status: Active
+_organized: true
 ---
 
 # OMSInt — Status

@@ -1,3 +1,6 @@
+---
+_organized: true
+---
 # Mastra Scripts Reference
 
 > Every operational task for this repo is wrapped in a shell script under [`scripts/`](../scripts/). **Never run `tofu apply` directly** — use `deploy.sh`. This document lists each script, what it does, when to use it, and the AWS resources it touches.

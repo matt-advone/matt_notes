@@ -1,3 +1,6 @@
+---
+_organized: true
+---
 # Mastra Deployment Guide
 
 > **Audience:** DevOps / on-call. This document maps every step of a deployment to the **exact AWS resources** it touches, so you can jump straight to the failing component in the AWS console or CLI when something breaks.

@@ -1,3 +1,6 @@
+---
+_organized: true
+---
 # Mastra — Session Handoff
 
 ## Project

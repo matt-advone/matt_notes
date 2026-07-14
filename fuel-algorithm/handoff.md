@@ -1,3 +1,6 @@
+---
+_organized: true
+---
 # fuel-algorithm — handoff
 
 Project: `/Users/mattperzel/src/fuel_algorithm`

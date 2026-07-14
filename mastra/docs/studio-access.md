@@ -1,3 +1,6 @@
+---
+_organized: true
+---
 # Mastra Studio Access Guide
 
 > Mastra Studio (the agent authoring/management UI) runs **inside the private VPC** on each Mastra instance ECS task and is **not publicly exposed**. This document explains how to reach it for each instance.

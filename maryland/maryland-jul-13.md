@@ -1,5 +1,6 @@
 ---
 type: Note
+_organized: true
 ---
 # Maryland Jul 13
 
