@@ -109,6 +109,62 @@ View rules that matter when creating or editing files:
 
 Use kebab-case: `my-note-title.md`. One note per file.
 
+## Folder structure & file placement
+
+The vault is organized into four top-level folders. Place every new note in the
+folder that matches what the note is *about*, not where you happen to be working:
+
+| Folder | Contains | Example |
+|---|---|---|
+| `projects/<repo-name>/` | Notes about a single code repository / app / library — session handoffs, status notes, design docs. One subfolder per project, named after the repo in kebab-case. | `projects/billing_api/billing_api.md` |
+| `customers/<customer-name>/` | Notes about a specific customer, tenant, or client engagement — requirements, meeting notes, deployment specifics. One subfolder per customer, kebab-case. | `customers/maryland/maryland-jul-13.md` |
+| `general/` | Notes not tied to a specific project or customer — Tolaria type documents, generic how-tos, vault-wide references, templates. | `general/note.md`, `general/type.md` |
+| `todo/` | Action items, task lists, reminders, follow-ups, checklists. | `todo/july-followups.md` |
+
+### Decision rule (apply in order)
+
+1. Is it about one code repo / app / library? → `projects/<repo-name>/`
+2. Is it about a customer / tenant / client? → `customers/<customer-name>/`
+3. Is it a task, TODO, checklist, or action item? → `todo/`
+4. Otherwise (type doc, generic reference, vault-wide note) → `general/`
+
+### Placement rules
+
+- One subfolder per project / customer, kebab-case, named after the repo or
+  customer. Create the subfolder if it doesn't exist yet.
+- Keep filenames kebab-case, one note per file, first H1 = note title.
+- Type documents (`type: Type` frontmatter) live in `general/`.
+- The vault root should contain only: `AGENTS.md`, `CLAUDE.md`, `kilo.md`, and
+  config (`kilo/`, `.gitignore`, etc.). No loose notes at the root.
+- A note about a project that is deployed for a specific customer (e.g. OMSInt
+  for Cobb) still goes under `projects/<repo>/` if the focus is the codebase,
+  or under `customers/<customer>/` if the focus is the customer
+  relationship/deployment. When unsure, prefer `projects/`.
+
+### Recategorization (when something is in the wrong place)
+
+A note is misplaced if it sits at the vault root (other than the allowed root
+files above) or in a folder whose subject doesn't match the note's subject. To
+recategorize:
+
+1. Identify the correct destination folder using the decision rule above. Create
+   the subfolder if needed.
+2. Move the file with `git mv <old> <new>`, preserving the filename and all
+   frontmatter.
+3. Wikilinks (`[[filename]]`, `[[Note Title]]`) resolve globally across the
+   vault, so moves do not usually break links. Only update a wikilink if it
+   explicitly used a relative path (rare).
+4. If a move would create a filename collision (two status notes for the same
+   project), do not keep duplicates: merge into one canonical file and append the
+   older content under a dated `## Earlier session — <date>` section near the
+   bottom.
+5. Update `related_to` / `belongs_to` relationships only if the subject of the
+   note changed, not just because it moved folders.
+
+This applies to Hermes and any other agent creating notes here: when you create
+a note, put it directly in the right folder; when you notice a misplaced note,
+recategorize it following the steps above.
+
 ## What agents should do
 
 - Create and edit notes using the frontmatter and H1 conventions above.
