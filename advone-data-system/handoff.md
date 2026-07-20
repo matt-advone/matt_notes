@@ -124,13 +124,47 @@ connector Lambdas land — VPC endpoints or NAT then). Local tofu provider cache
 exists under infra/root/.terraform from validation. Repo is still not a git repo —
 Matt hasn't asked to init/commit.
 
+## Session 2026-07-19 (later still) — Docker dev environment built & LIVE-TESTED
+
+Matt asked for a script deploying two databases to Docker + dev environment setup
+(plan §7b). Built and fully verified on this machine (Docker 29.5.2):
+
+- `docker-compose.yml` (project name advone-ds-dev): pg-ca (localhost:5442), pg-us
+  (localhost:5443) — postgres:16 with healthchecks + named volumes; minio
+  (9000/9001, buckets advone-ds-dev-{ca,us}-data auto-created); metabase behind a
+  compose profile (`--metabase`, port 3000). All ports bound 127.0.0.1 only; all
+  local passwords 'localdev'.
+- `scripts/advone-dev` CLI: up / init / smoke / psql <ca|us> / status / down /
+  reset (typed-confirmation guard). psql runs INSIDE containers — no local psql
+  needed. init applies the SAME sql/ files as production `advone db init` (parity
+  is the point) and creates marts.smoke tables + a global.smoke UNION ALL view.
+- To make one SQL set serve both environments, 20_ca_federation_hub.sql's server
+  OPTIONS are now parameterized (us_host/us_port/us_sslmode psql vars); prod
+  advone passes sslmode=require, dev passes pg-us/disable.
+- **The dev env caught a real prod bug**: default privileges were only declared
+  FOR ROLE dbt_transform, so marts tables created by the admin account were
+  invisible to hub_fdw/analyst/readonly (smoke test failed with permission
+  denied over FDW). Fixed in 00_regional_init.sql + 10_us_hub_user.sql by adding
+  plain ALTER DEFAULT PRIVILEGES for the executing admin too.
+- Verified live: `up` end-to-end ✓; blended query on CA hub returns CA+US rows ✓;
+  re-run of init is idempotent ✓; adversarial check — hub_fdw can read marts.smoke,
+  gets permission-denied on meta.sync_state and on CREATE TABLE in marts ✓.
+- Caveat noted in 20_ca file: re-running the hub init CASCADE-drops global.* views
+  that reference us_fdw (dbt run recreates them).
+- Containers left RUNNING on Matt's machine (advone-ds-dev-pg-ca-1, -pg-us-1,
+  -minio-1). `scripts/advone-dev down` stops them.
+
 ## Current state
 
-- Plan (docs/plan.md rev 4) + full deployable infra implemented as above.
-- Verified: tofu validate ✓, bash syntax ✓, CLI help/check ✓. Not verified: actual
-  AWS deploy (no credentials in session), db init against real RDS, wizard end-to-end
-  (interactive tty required).
+- Plan (docs/plan.md rev 4) + deployable AWS infra (OpenTofu + advone CLI) + working
+  Docker dev environment.
+- Verified: tofu validate ✓, bash syntax ✓, CLI help/check ✓, full local dev stack
+  incl. federation + role isolation ✓ (live). Not verified: actual AWS deploy (no
+  credentials in session), db init against real RDS, wizard end-to-end (needs tty).
 - First real deploy: `scripts/advone check` → `configure` → `deploy` → `db init`.
+- Next build steps: dbt project skeleton, first connector (Zoho Books) developed
+  against the dev environment, WireMock + fixtures service (plan §7b), CI running
+  the compose stack.
 
 ## Next steps
 
