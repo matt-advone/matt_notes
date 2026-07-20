@@ -80,9 +80,57 @@ CDK/TypeScript/Postgres-with-RLS patterns — this plan deliberately reuses them
 org is 702896317. Zoho MCP connectors for CRM/Books/Inventory/Desk are already wired in
 Matt's Claude Code setup.
 
+## Session 2026-07-19 (later) — infra implemented (OpenTofu + advone CLI)
+
+Matt asked for the plan to be made deployable: OpenTofu + foolproof wizard-driven
+scripts, config saved to S3 for easy redeploys, backend/tfvars managed by CLI (never
+raw tofu). Built and validated (`tofu validate` passes, `bash -n` passes, help/check
+exercised; NOT yet deployed to AWS — no creds on this machine during the session):
+
+- `scripts/advone` — single bash CLI (macOS bash-3.2 safe). Subcommands:
+  `check` (preflight, reports all missing tools incl. session-manager-plugin),
+  `bootstrap` (idempotent admin bucket `advone-ds-admin-<acct>` in ca-central-1:
+  versioned, KMS, public-blocked; holds `config/<env>.json` + `tfstate/<env>.tfstate`),
+  `configure` (wizard with validated prompts — residency-guarded region choices,
+  CIDR/email/instance-class validation, defaults prefilled from existing config;
+  pushes config to S3), `config show|pull|push`, `deploy` (pulls S3 config →
+  generates backend.hcl + tfvars.json into gitignored `.advone/<env>/` → init
+  -reconfigure → plan → confirm → apply), `plan`, `output`, `destroy` (typed-name
+  guard; auto-disables RDS deletion protection first), and `db tunnel|psql|init`
+  (SSM port-forwarding via bastion; `db init` applies sql/ files to both DBs,
+  generates role passwords via Secrets Manager get-random-password, upserts one
+  secret per role per region, builds the FDW hub; idempotent, re-run rotates passwords).
+- `infra/modules/regional-stack/` — per-region stamp: VPC (2 AZ, private DB subnets,
+  public bastion subnet, NO NAT), RDS Postgres 16 (gp3, encrypted, force_ssl param
+  group, 7-day backups, deletion protection, final snapshot, master creds in Secrets
+  Manager), regional data bucket (landing/ + drops/ prefixes, versioned, KMS,
+  lifecycle), t4g.nano SSM bastion (no ingress, IMDSv2, installs postgresql16 client).
+- `infra/modules/peering/` — cross-region peering + routes + THE one cross-border SG
+  rule (CA VPC → US DB :5432); deliberately no US→CA mirror rule.
+- `infra/root/` — both stacks from the same module via provider aliases + peering +
+  account budget (80% actual / 100% forecast alerts). Residency guards as variable
+  validations (ca_region must be ca-*, us_region must be us-*). `backend "s3" {}`
+  partial config, filled by generated backend.hcl (uses OpenTofu ≥1.10 use_lockfile —
+  no DynamoDB).
+- `sql/` — 00_regional_init (schemas staging/core/marts/meta/mapping, meta.sync_state,
+  roles dbt_transform/readonly_ai/analyst_local via \gexec create-if-missing, default
+  privileges), 10_us_hub_user (hub_fdw: marts-only, conn limit, statement timeout),
+  20_ca_federation_hub (postgres_fdw, drop+recreate us_marts server, user mappings,
+  IMPORT FOREIGN SCHEMA marts INTO us_fdw, global schema).
+- `README.md` quickstart + `.gitignore` (.advone/, .terraform/, tfstate/tfplan).
+
+Design notes: no NAT gateways (nothing private needs egress yet; revisit when
+connector Lambdas land — VPC endpoints or NAT then). Local tofu provider cache
+exists under infra/root/.terraform from validation. Repo is still not a git repo —
+Matt hasn't asked to init/commit.
+
 ## Current state
 
-- Plan document written; nothing built, nothing deployed. Repo has only `docs/plan.md`.
+- Plan (docs/plan.md rev 4) + full deployable infra implemented as above.
+- Verified: tofu validate ✓, bash syntax ✓, CLI help/check ✓. Not verified: actual
+  AWS deploy (no credentials in session), db init against real RDS, wizard end-to-end
+  (interactive tty required).
+- First real deploy: `scripts/advone check` → `configure` → `deploy` → `db init`.
 
 ## Next steps
 
