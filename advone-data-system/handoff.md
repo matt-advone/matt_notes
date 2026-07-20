@@ -57,10 +57,13 @@ Matt's Claude Code setup.
 
 ## Next steps / open questions (answers needed from Matt — §12 of plan)
 
-1. Data-residency requirements in any Canadian customer contract?
+1. Residency ANSWERED (strict, bidirectional). Remaining sub-question: does the obligation
+   cover data in flight (query-time federation through the CA hub) or only at rest?
+   Plan defaults to at-rest; rollup-exchange fallback documented in plan §2.
 2. Confirm Zoho topology: two Books orgs (US/CA), one CRM, one Desk?
 3. One Geotab MyAdmin account or separate US/CA?
-4. Finance beyond Books: payroll/banking as connectors or CSV drops?
-5. Who queries this besides Matt — do region-scoped roles matter day 1?
+4. Is there an existing CRM field marking accounts US vs CA, or add + backfill in Phase 0?
+5. Finance beyond Books: payroll/banking as connectors or CSV drops?
+6. Who queries this besides Matt — do regional staff roles matter day 1?
 
 Then: Phase 0 (credentials inventory, repo scaffold) → Phase 1 (CDK infra + Books slice).
