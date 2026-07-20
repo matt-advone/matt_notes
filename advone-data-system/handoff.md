@@ -14,14 +14,27 @@ Books (×2 orgs) / Inventory / Desk, plus finance CSV drops.
 
 Matt asked for a plan for the system. No code yet — deliverable was the plan document.
 
-Key decisions recommended in the plan:
+**Rev 2 same day:** Matt confirmed a **strict bidirectional residency requirement** —
+Canadian data stays in Canadian data centers, US data stays in US data centers. The
+original single-instance-in-ca-central-1 design was replaced with two regional stacks.
 
-- **One RDS PostgreSQL 16 instance** (db.t4g.medium, start single-AZ) in **ca-central-1**
-  — chosen so Canadian data-residency asks are satisfied by default; US data in Canada is
-  not a contractual problem. Two physical regional DBs rejected in favor of logical tenancy.
-- **Two-level tenancy:** `region` ('US'/'CA') + `customer_id` columns on all core tables,
-  enforced with Postgres RLS + role-per-access-tier (analyst_all, analyst_us/ca,
-  customer_scoped, readonly_ai). Metabase sandboxing mirrors the same rules.
+Key decisions in the plan (rev 2):
+
+- **Two RDS PostgreSQL 16 instances** (db.t4g.medium each, single-AZ to start):
+  ca-central-1 for CA data, us-east-2 for US data. Each region gets its own full stack
+  (S3 landing, Secrets, connector Lambdas, backups) — one CDK stamp deployed twice.
+- **Query federation, not replication:** a hub in the **CA** database uses `postgres_fdw`
+  (read-only, marts-schema-only `hub_fdw` role) to build `global.*` UNION ALL views over
+  both regions. Nothing cross-border is ever at rest; hub is in Canada so CA data never
+  leaves even in flight. Metabase caching disabled for global questions. Fallback if the
+  obligation covers in-flight data too: rollup exchange (only pre-aggregated rollups cross).
+- **Tenancy:** `region` enforced physically; `customer_id` enforced with RLS inside each
+  regional DB. Metabase sandboxing mirrors the same rules. CI gates: cross-customer
+  adversarial tests + a residency test (hub_fdw can't read outside marts; no dbt model
+  persists foreign-table data).
+- **Source routing:** Books/Inventory split naturally by org; CRM/Desk (shared orgs) route
+  by a region field on each account, unclassified records quarantined in CA; Phase 0
+  includes a CRM region-classification pass.
 - **ELT:** custom TypeScript Lambda connectors (EventBridge cron) → raw JSON to S3 →
   Postgres `raw` schemas → **dbt-core** transforms → staging/core/marts.
 - **Customer master** (`mapping.customer_xref`, human-curated dbt seed, matcher-assisted)
