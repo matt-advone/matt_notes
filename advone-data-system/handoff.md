@@ -40,7 +40,8 @@ Key decisions in the plan (rev 2):
 - **Customer master** (`mapping.customer_xref`, human-curated dbt seed, matcher-assisted)
   linking CRM ↔ Books ↔ Desk ↔ MyAdmin ↔ MyGeotab identities — flagged as the
   highest-value piece.
-- **BI:** Metabase OSS on Fargate. Cost target ~$100–150/mo.
+- **BI:** Metabase OSS on Fargate (ca-central-1, beside the hub). Cost target ~$200–265/mo
+  (residency requirement adds ~$100/mo over the single-instance design).
 - **Roadmap:** Phase 1 = infra + Zoho Books end-to-end slice; Phase 2 = customer master +
   CRM/Desk; Phase 3 = Geotab + the margin mart (billed revenue vs Geotab device cost);
   Phase 4 = hardening/insights.
