@@ -32,9 +32,24 @@ Key decisions in the plan (rev 2):
   regional DB. Metabase sandboxing mirrors the same rules. CI gates: cross-customer
   adversarial tests + a residency test (hub_fdw can't read outside marts; no dbt model
   persists foreign-table data).
-- **Source routing:** Books/Inventory split naturally by org; CRM/Desk (shared orgs) route
-  by a region field on each account, unclassified records quarantined in CA; Phase 0
-  includes a CRM region-classification pass.
+- **Source routing:** Books/Billing/Inventory split naturally by org; CRM/Desk/MyAdmin
+  (shared) route by the confirmed ERP rule (below); each region's connector persists only
+  its own region's rows, filtered before write.
+
+**Rev 3 same day:** Matt answered all open questions:
+
+- Zoho topology: **1 CRM, 1 Desk, 2× Books, 2× Billing, 2× Inventory** — Zoho Billing
+  added as a source (the MRR system of record).
+- **One Geotab MyAdmin account** for both regions; rows routed by customer region.
+- **CRM region rule: account ERP = 'ADVA01' → Canadian, everything else → US.** Already
+  populated, deterministic, no backfill; Phase 0 just sanity-checks null-ERP accounts.
+- Finance data arrives incrementally as CSV/Excel → plan §7a defines a **define-a-table
+  framework**: YAML dataset spec in `datasets/` → generated DDL + dbt staging model →
+  generic validating loader Lambda on S3 drop (Excel supported natively). New dataset
+  ≈ 30 min; new months of existing data = drag-and-drop.
+- No regional staff roles day 1, but **other systems will query this data** → per-system
+  `svc_*` Postgres roles, read-only on `marts`/`global` (the published contract), private
+  networking only; PostgREST as the future REST option.
 - **ELT:** custom TypeScript Lambda connectors (EventBridge cron) → raw JSON to S3 →
   Postgres `raw` schemas → **dbt-core** transforms → staging/core/marts.
 - **Customer master** (`mapping.customer_xref`, human-curated dbt seed, matcher-assisted)
@@ -55,15 +70,16 @@ Matt's Claude Code setup.
 
 - Plan document written; nothing built, nothing deployed. Repo has only `docs/plan.md`.
 
-## Next steps / open questions (answers needed from Matt — §12 of plan)
+## Next steps
 
-1. Residency ANSWERED (strict, bidirectional). Remaining sub-question: does the obligation
-   cover data in flight (query-time federation through the CA hub) or only at rest?
-   Plan defaults to at-rest; rollup-exchange fallback documented in plan §2.
-2. Confirm Zoho topology: two Books orgs (US/CA), one CRM, one Desk?
-3. One Geotab MyAdmin account or separate US/CA?
-4. Is there an existing CRM field marking accounts US vs CA, or add + backfill in Phase 0?
-5. Finance beyond Books: payroll/banking as connectors or CSV drops?
-6. Who queries this besides Matt — do regional staff roles matter day 1?
+All §12 questions answered (see rev 3 notes above); §12 is now a decisions log. One
+remaining sub-question: does the residency obligation cover data **in flight** (query-time
+federation through the CA hub) or only **at rest**? Plan defaults to at-rest; rollup-exchange
+fallback documented in plan §2.
+
+Ready to start **Phase 0**: sanity-check the ERP=ADVA01 rule against all CRM accounts,
+gather API credentials (Zoho self-clients ×5 services, MyAdmin API user, MyGeotab service
+accounts), scaffold the repo (`infra/` CDK, `connectors/`, `dbt/`, `datasets/`, `docs/`).
+Then Phase 1: dual-region CDK stamp + federation hub + Zoho Books end-to-end slice.
 
 Then: Phase 0 (credentials inventory, repo scaffold) → Phase 1 (CDK infra + Books slice).
