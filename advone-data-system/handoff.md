@@ -22,7 +22,7 @@ Key decisions in the plan (rev 2):
 
 - **Two RDS PostgreSQL 16 instances** (db.t4g.medium each, single-AZ to start):
   ca-central-1 for CA data, us-east-2 for US data. Each region gets its own full stack
-  (S3 landing, Secrets, connector Lambdas, backups) — one CDK stamp deployed twice.
+  (S3 landing, Secrets, connector Lambdas, backups) — one IaC stamp deployed twice.
 - **Query federation, not replication:** a hub in the **CA** database uses `postgres_fdw`
   (read-only, marts-schema-only `hub_fdw` role) to build `global.*` UNION ALL views over
   both regions. Nothing cross-border is ever at rest; hub is in Canada so CA data never
@@ -50,6 +50,20 @@ Key decisions in the plan (rev 2):
 - No regional staff roles day 1, but **other systems will query this data** → per-system
   `svc_*` Postgres roles, read-only on `marts`/`global` (the published contract), private
   networking only; PostgREST as the future REST option.
+
+**Rev 4 same day:** two changes at Matt's request:
+
+- **OpenTofu instead of CDK** (plan §2, §11 Phase 0): single `regional-stack` module
+  instantiated twice via provider aliases (aws.us/aws.ca) from one root — one `tofu plan`
+  covers both regions. S3 state backend in ca-central-1, version pinned, plan-on-PR /
+  apply-on-merge via GitHub Actions. Note: this diverges from FMIS's CDK choice.
+- **Docker local dev environment** (new plan §7b): docker-compose with pg-us + pg-ca
+  (real postgres_fdw federation between containers), MinIO for regional S3 buckets,
+  WireMock replaying recorded/scrubbed Zoho/MyAdmin fixtures, optional Metabase.
+  Connectors are handler/core split and ship as Lambda container images, so the artifact
+  tested in compose is the deployed artifact. dbt + RLS/residency adversarial tests run
+  locally; CI runs the same compose stack. LocalStack deliberately avoided (EventBridge/
+  Secrets/IAM covered by tofu plan review + staging smoke).
 - **ELT:** custom TypeScript Lambda connectors (EventBridge cron) → raw JSON to S3 →
   Postgres `raw` schemas → **dbt-core** transforms → staging/core/marts.
 - **Customer master** (`mapping.customer_xref`, human-curated dbt seed, matcher-assisted)
@@ -79,7 +93,7 @@ fallback documented in plan §2.
 
 Ready to start **Phase 0**: sanity-check the ERP=ADVA01 rule against all CRM accounts,
 gather API credentials (Zoho self-clients ×5 services, MyAdmin API user, MyGeotab service
-accounts), scaffold the repo (`infra/` CDK, `connectors/`, `dbt/`, `datasets/`, `docs/`).
-Then Phase 1: dual-region CDK stamp + federation hub + Zoho Books end-to-end slice.
-
-Then: Phase 0 (credentials inventory, repo scaffold) → Phase 1 (CDK infra + Books slice).
+accounts), scaffold the repo (`infra/` OpenTofu, `connectors/`, `dbt/`, `datasets/`,
+`fixtures/`, `docker-compose.yml`, `docs/`). Then Phase 1: compose stack + Books connector
+proven locally first, then the dual-region OpenTofu stamp + federation hub + the same
+Books slice deployed to AWS.
