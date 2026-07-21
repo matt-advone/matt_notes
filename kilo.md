@@ -13,6 +13,12 @@ Tolaria/frontmatter conventions live in `AGENTS.md`; this file focuses on
 
 ## Folder structure
 
+> **Hard rule: every note goes in a subdirectory of the vault root.**
+> Never create a loose note at the vault root. Pick the matching top-level folder
+> for what the note is *about* (`projects/`, `customers/`, `todo/`, or `general/`),
+> then the correct subfolder inside it. Customer notes go in `customers/`, project
+> notes go in `projects/`, tasks go in `todo/`, everything else in `general/`.
+
 The vault has four top-level folders. Place every new note in the folder that
 matches what the note is *about*, not where you happen to be working:
 
@@ -75,8 +81,10 @@ recategorize:
 
 ## What Hermes / Kilo should do
 
-- When you create a note, put it directly in the right folder using the rules
-  above — never at the vault root.
+- **Always create notes in the correct subdirectory, never at the vault root.**
+  Apply the decision rule above: about a code repo → `projects/<repo>/`, about a
+  customer → `customers/<customer>/`, a task/TODO → `todo/`, otherwise → `general/`.
+  Create the subfolder if it does not exist yet.
 - When you notice a misplaced note (loose at the root, or in a folder whose
   subject doesn't match), recategorize it following the steps above.
 - Keep shared agent instructions in `AGENTS.md`; this file stays focused on
@@ -84,7 +92,8 @@ recategorize:
 
 ## What Hermes / Kilo should avoid
 
-- Do not create loose notes at the vault root.
+- Do not create loose notes at the vault root — every note goes in a subdirectory
+  matching its subject (`projects/`, `customers/`, `todo/`, or `general/`).
 - Do not infer note type or meaning from folders — folders are an organization
   aid, not the source of truth (the `type:` frontmatter is).
 - Do not keep duplicate status files for the same project; merge them.

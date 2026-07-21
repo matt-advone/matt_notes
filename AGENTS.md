@@ -188,6 +188,8 @@ recategorize it following the steps above.
 
 ## What agents should avoid
 
+- Do not create loose notes at the vault root — every note goes in a subdirectory
+  matching its subject (`projects/`, `customers/`, `todo/`, or `general/`).
 - Do not infer note type or meaning from folders.
 - Do not treat files in `attachments/` as notes, types, or view definitions.
 - Do not silently overwrite an existing custom `AGENTS.md`.
