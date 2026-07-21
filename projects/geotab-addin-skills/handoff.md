@@ -92,6 +92,49 @@ Added the 2026-standard testing stack to the template, per Matt's request:
   lint + build all pass. Note: `npx playwright install chromium` needed once
   per machine (~95 MB).
 
+## Session 2026-07-21 — MockGeotab fleet simulator
+
+Replaced the static test fixtures with **MockGeotab**
+(`template/src/test/mockGeotab/`), a deterministic fleet simulator that
+impersonates the MyGeotab API for all test layers:
+
+- `random.ts` (seeded mulberry32 PRNG), `geo.ts` (haversine/interpolation/
+  jitter/hexagons), `regions.ts` (real zones: 12 GTA places incl. Oakville HQ,
+  Pearson Cargo, Hamilton Port; 9 Chicagoland places), `MockGeotab.ts` (the
+  simulator), plus its own 17-test suite (`mockGeotab.test.ts`).
+- World model: vehicle archetypes (trucks/vans/service) based at real depots,
+  per-day trip planning within work hours, physically consistent everything —
+  trip LogRecords lie on the route inside the trip window with a trapezoid
+  speed profile, odometer StatusData grows by exactly the trip distance,
+  ignition on/off at trip boundaries, engine-hours accumulate driving+idle.
+  ExceptionEvents (speeding >100 km/h, harsh braking, idling >10 min,
+  after-hours) reference Rule entities; FaultData from a 7-fault J1939/OBD
+  library. Entity types added to `src/geotab/types.ts` (Zone, Trip, LogRecord,
+  StatusData, FaultData, ExceptionEvent, Rule, Diagnostic, FeedResult).
+- API surface via `mock.dispatch()`: Authenticate, Get (deviceSearch /
+  date-range / name-wildcard / groups / resultsLimit filtering), GetCountOf,
+  GetFeed (versioned, incremental), ExecuteMultiCall, Add/Set/Remove.
+- **`mock.next({minutes})`** advances the live world (vehicles move, trips
+  complete, new trips start, DSI + feeds update) and returns a TickSummary —
+  the update-reaction test pattern is proven in mockGeotab.test.ts
+  (fetch store -> next(30) -> fetch -> assert change).
+- Deterministic mode: same seed => byte-identical world AND evolution
+  (tested). `mode:"random"` = fuzz with the seed logged/exposed for exact
+  reproduction. Data never runs out — generation is procedural.
+- `fixtures/geotabData.ts` is now a thin shim exposing a 3-vehicle default
+  world (Truck 101 driving, Van 201 parked online, Service 301 offline —
+  guaranteed by ensureDrivingNow + offlineCount). Existing exports kept.
+  `geotabHandlersFor(mock)` in mocks/server.ts points MSW at a private
+  instance for live tests (default shared world is read-only by rule).
+- Perf: 100 vehicles x 180 days = ~47k trips / 187k StatusData / 47k events
+  in ~400ms; next(60 min) ~13ms.
+- Docs updated: testing skill gained a "MockGeotab simulator" section,
+  geotab-api skill, CLAUDE.md, both READMEs. Verified on a fresh generation:
+  lint, 24/24 unit tests, build, 2/2 e2e all pass.
+
+Note: this handoff file was moved by the vault convention to
+`projects/geotab-addin-skills/handoff.md` (was `geotab-addin-skills/`).
+
 ## Next steps / ideas
 
 - Test with real credentials (`VITE_GEOTAB_PASSWORD` in `.env`) and a real

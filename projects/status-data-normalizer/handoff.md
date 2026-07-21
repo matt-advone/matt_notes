@@ -40,3 +40,20 @@ The report found 869 forward-time, same-diagnostic engine-hour decreases across 
 - Fixed API deduplication so different devices with equal diagnostic/timestamp/value records are not collapsed.
 - Added regression coverage for late higher readings, strict same-timestamp handling, multiplier clamping, and cross-device deduplication. Updated served-sequence fixtures to use clock-relative timestamps so rolling retention does not invalidate them.
 - Verified with `go test ./...` from `/Users/mattperzel/src/statusDataNormalizer/server`.
+
+## 2026-07-21 Client presentation
+- Built an HTML slide presentation for Kiewit explaining the normalizer: the raw engine-hours
+  problem (drops/jumps/noise), the drop-in Geotab-compatible proxy architecture, the ingest
+  pipeline (60 s feed poller → z-score noise screen → validation → stores), the three validation
+  rules (`drop`, `jump` with the 1.0 rate ceiling, `statistical_jump` at 3× median rate),
+  invalid-run tracking with automatic recovery, the adjustment poller for stale-ECU devices
+  (120 h window, 15 min sweep), and the reporting endpoints (`/engine-hours/status`,
+  `/invalid-readings`, `/ignition`, `/health`).
+- Per Matt's direction, the reporting slide pitches a **proposed** (not yet built) daily email
+  digest to Kiewit driven by the existing `/engine-hours/status` `currentlyInvalid` flag; the
+  mock email in the deck is labeled illustrative.
+- Published as a Claude artifact: https://claude.ai/code/artifact/d9649456-66e5-4ce7-a97e-eb3a8158bfa6
+  Source HTML lives in the session scratchpad (`status-data-normalizer-presentation.html`);
+  republish from a session or pass the URL to update it.
+- Audience calibration: one engineering manager (technical, not hands-on) and one Geotab/engine-
+  hours domain expert (non-programmer) — medium-technical, no code, all logic shown as visuals.
