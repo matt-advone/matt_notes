@@ -164,6 +164,9 @@ Matt asked for a script deploying two databases to Docker + dev environment setu
 
 - Plan (docs/plan.md rev 4) + deployable AWS infra (OpenTofu + advone CLI) + working
   Docker dev environment.
+- Team-facing docs written 2026-07-20 in the dev_documents vault:
+  `projects/advone-data-system/README.md` (ProjectGuide) + `runbook.md` (Runbook) —
+  left uncommitted in that repo (Matt hasn't asked to commit).
 - Verified: tofu validate ✓, bash syntax ✓, CLI help/check ✓, full local dev stack
   incl. federation + role isolation ✓ (live). Not verified: actual AWS deploy (no
   credentials in session), db init against real RDS, wizard end-to-end (needs tty).
