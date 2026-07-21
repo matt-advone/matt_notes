@@ -64,6 +64,34 @@ Key decisions:
 - NOT yet tested: against a real MyGeotab database (no password available),
   actual S3 deploy, or installation inside MyGeotab.
 
+## Session 2026-07-20 (later) — testing stack
+
+Added the 2026-standard testing stack to the template, per Matt's request:
+
+- **Vitest + React Testing Library** for unit/component tests (shares the Vite
+  config — `test` block in `vite.config.ts`, jsdom, setup in
+  `src/test/setup.ts`), **Playwright** for E2E (`playwright.config.ts`,
+  `e2e/`), **MSW** for API mocking in unit tests.
+- **Shared fixtures** are the key design: `src/test/fixtures/geotabData.ts`
+  holds a fake fleet (3 devices/groups/statuses — one driving, one offline)
+  plus `dispatchGeotabCall()`, a fake MyGeotab JSON-RPC server. The MSW
+  handlers (unit) and the Playwright `page.route` mock (E2E) both answer from
+  it, so no test layer ever touches a real database. Playwright's webServer
+  also injects fake `VITE_GEOTAB_*` creds pointing at `e2e.geotab.invalid` as
+  a second safety net.
+- Sample tests double as copy-paste patterns: `devicesStore.test.ts` (happy +
+  error path via per-test `server.use` override), `themeStore.test.ts` (DOM
+  class + persistence), `Dashboard.test.tsx` (RTL: data/loading/error states),
+  `e2e/app.spec.ts` (dashboard + theme toggle w/ reload persistence).
+- New **`testing` skill** (`.claude/skills/testing/SKILL.md`, mirrored to
+  `.kilocode/rules/50-testing.md`) mandates automatic test creation — a table
+  of "you just did X → you must also write Y", definition of done
+  (`lint && test && build`, + e2e when flows change), and "never weaken a test
+  to pass". CLAUDE.md hard rules 7–8 updated to match.
+- Verified on a fresh generation: 7/7 Vitest tests, 2/2 Playwright tests,
+  lint + build all pass. Note: `npx playwright install chromium` needed once
+  per machine (~95 MB).
+
 ## Next steps / ideas
 
 - Test with real credentials (`VITE_GEOTAB_PASSWORD` in `.env`) and a real
