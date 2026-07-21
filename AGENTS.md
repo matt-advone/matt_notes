@@ -174,6 +174,10 @@ recategorize it following the steps above.
 
 ## What agents should do
 
+- **Always create notes in the correct subdirectory, never at the vault root.**
+  Apply the decision rule above: about a code repo → `projects/<repo>/`, about a
+  customer → `customers/<customer>/`, a task/TODO → `todo/`, otherwise → `general/`.
+  Create the subfolder if it does not exist yet.
 - Create and edit notes using the frontmatter and H1 conventions above.
 - Create and edit type documents when the user asks for note categories or defaults.
 - Add or modify relationships without breaking existing wikilinks.
