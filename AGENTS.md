@@ -111,6 +111,13 @@ Use kebab-case: `my-note-title.md`. One note per file.
 
 ## Folder structure & file placement
 
+> **Hard rule: every note goes in a subdirectory of the vault root.**
+> Never create a loose note at the vault root. Pick the matching top-level folder
+> for what the note is *about* (`projects/`, `customers/`, `todo/`, or `general/`),
+> then the correct subfolder inside it. This applies to every agent (Hermes,
+> Kilo, Claude, etc.) and to manually created notes alike — customer notes go in
+> `customers/`, project notes go in `projects/`, and so on.
+
 The vault is organized into four top-level folders. Place every new note in the
 folder that matches what the note is *about*, not where you happen to be working:
 
