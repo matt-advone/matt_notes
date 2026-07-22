@@ -7,7 +7,7 @@ status: Active
 # advone-git-system — Handoff
 
 ## Last updated
-2026-07-21 (session 2)
+2026-07-21 (session 3)
 
 ## What this project is
 A cross-platform (macOS + Windows) desktop app that lets non-technical users
@@ -103,3 +103,20 @@ Inter).
   `codeload.github.com` — add more if you ever proxy elsewhere.
 - CSP in tauri.conf.json is intentionally minimal (everything goes through the
   Rust http plugin). Don't relax without reason.
+
+
+## Session 3 — 2026-07-21: Branded app icon
+
+- Generated a proper branded app icon from the Advantage One logo
+  (`~/Downloads/AO-Horizontal-Color.png`). The swirl mark was extracted from
+  the 102px-tall logo, unmixed into orange (#F15A22) / gray (#B1B3B6) layers,
+  upscaled with edge re-sharpening (blur + smoothstep on the coverage masks),
+  and composed onto a macOS-style dark charcoal-navy rounded tile at 1024px.
+- Ran `npx tauri icon src-tauri/icons/source.png` — regenerated ALL icon
+  sizes (desktop .icns/.ico/pngs, iOS AppIcon set, Android mipmaps).
+  `src-tauri/icons/source.png` is now the 1024px master.
+- Alternate light-tile variant saved at `~/Downloads/ao-app-icon-light-alt.png`;
+  regeneration script at `~/Downloads/ao-app-icon-generator.py` (needs Pillow,
+  plus `mark.png` extracted from the horizontal logo).
+- Not yet verified: rebuilt app bundle with the new .icns (run
+  `npm run tauri build` or dev to see it in the Dock).
