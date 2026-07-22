@@ -88,10 +88,13 @@ Fixed and redeployed: `github_owners` now `["AdvantageOne", "matt-advone"]`;
 sync lambda now refuses to publish an empty snapshot over a non-empty one
 (PAT-went-blind guard). Re-sync now caches `matt-advone/matt_notes`.
 
-**Blocked on Matt**: replace the sync PAT with one whose resource owner is
-the AdvantageOne org (fine-grained, All repositories, read-only
-Contents+Metadata), store via `scripts/configure-github.sh`, rerun
-`scripts/sync-now.sh` — should then find all 3 vaults.
+**Resolved**: Matt replaced the PAT with an org-owned fine-grained PAT →
+dev_documents + matt_notes cached. Third vault `AdvantageOne/advone_docs`
+had no marker at all (no AGENTS.md, no topics), so detection correctly
+skipped it; added the `tolaria-vault` topic to the repo via gh CLI. Sync now
+caches all 3 vaults (and pack reuse verified: unchanged vaults aren't
+re-downloaded). Remaining setup: confirm the Claude connector end-to-end
+(add `/mcp` URL as custom connector, Connect with GitHub, try list_vaults).
 
 ### Open questions
 
