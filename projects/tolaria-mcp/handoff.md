@@ -75,6 +75,24 @@ no remote yet).
    Function URL if the `.on.aws` URL bothers anyone, tantivy-style index if
    corpus outgrows substring search.
 
+## Session 2026-07-22 (later): sync found 0 vaults — diagnosed
+
+Stack is deployed (Function URL
+`https://jjoo2povxza4dv3jh2cjt2ylea0nvfua.lambda-url.us-east-2.on.aws`).
+First sync returned 0 vaults. Root cause: the sync PAT is a fine-grained PAT
+with **resource owner = matt-advone**, so it sees only AdvantageOne's public
+repos (dev_documents is invisible), and matt-advone wasn't in
+`github_owners`.
+
+Fixed and redeployed: `github_owners` now `["AdvantageOne", "matt-advone"]`;
+sync lambda now refuses to publish an empty snapshot over a non-empty one
+(PAT-went-blind guard). Re-sync now caches `matt-advone/matt_notes`.
+
+**Blocked on Matt**: replace the sync PAT with one whose resource owner is
+the AdvantageOne org (fine-grained, All repositories, read-only
+Contents+Metadata), store via `scripts/configure-github.sh`, rerun
+`scripts/sync-now.sh` — should then find all 3 vaults.
+
 ### Open questions
 
 - If the org enables OAuth App access restrictions, an owner must approve
