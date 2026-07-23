@@ -40,4 +40,11 @@ Built `tools/zoho-token-rotator/` — an AWS Secrets Manager rotation Lambda tha
 - Consider adding the two scripts to the billing_api README (under the existing bootstrap section near `src/bootstrap/addAttachment*.ts`).
 - `runCAMonthly.sh` uses `node dist/src/main.js` so the data-lake project must be built first; `runUSMonthly.sh` uses `bun src/main.ts` directly. Documented in the runbook.
 - **Rotator not yet applied** — `./deploy.sh` was only run in `plan` mode (7 to add). Run `./deploy.sh` to create the Lambda, then manually attach it as the rotation function on each of the two Zoho secrets in the console (IAM + invoke perms are pre-wired). Suggest rotation schedule `rate(1 hour)` since Zoho access tokens expire hourly.
-- Optional: add a DynamoDB state-lock table for the S3 backend if concurrent deploys become a concern (currently no locking).
+
+## Local review fixes applied (2026-07-23)
+After a `/local-review-uncommitted` pass, fixed all 9 findings on the rotator:
+- CRITICAL: repo-root `.gitignore` rule `deploy/` was silently excluding `tools/zoho-token-rotator/deploy/*.tf` — anchored it to `/deploy/` so nested dirs track (verified with `git check-ignore`).
+- IAM: removed unused account-wide `secretsmanager:ListSecrets`; scoped `kms:Decrypt` with a `kms:ViaService = secretsmanager.us-east-2.amazonaws.com` condition.
+- `deploy.sh`: bucket-location lookup now `|| abort` (was silently aborting under `set -e`); `npm install` → `npm ci`; `tofu fmt -check` made non-blocking; added DynamoDB state-lock table `billing-api-rotator-tofu-locks` (auto-created, PAY_PER_REQUEST) + `-backend-config="dynamodb_table=..."` + `-reconfigure` on init.
+- Removed dead `state_bucket`/`state_key` terraform vars (replaced with a real `state_lock_table` var) and the unused `__testables` export.
+- Verified: typecheck clean, build clean, `tofu validate` ok, `tofu plan` = 7 to add, lock table ACTIVE, handler still exports correctly.
