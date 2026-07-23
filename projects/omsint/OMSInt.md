@@ -8,9 +8,72 @@ _organized: true
 # OMSInt — Notes
 
 ## Last updated
-2026-07-13 16:32 PDT
+2026-07-23 11:55 PDT
 
 ## Current session
+Implemented a worker **log level system** (`minimal` / `normal` / `verbose`)
+controllable at deploy time, ranging from brief init/health confirmation only
+up to the full verbose output (raw SOAP MultiSpeak responses) it logs today.
+
+Investigated the `cobbbeta` worker logs (these live in **CloudWatch**, not S3 —
+log group `/ecs/omsint-cobbbeta-worker` in **us-east-1**, latest stream
+`omsint-cobbbeta-worker/omsint-cobbbeta-worker/0e9443efe6924189a2178d2aa3d69d8f`).
+The verbose noise is mostly: per-request SOAP `RESULT:` envelopes, the
+"Private endpoint detected — TLS bypassed" notice emitted per HTTP send, and
+per-poll feed/batch summaries.
+
+### Recently completed
+- Added `lambda/packages/worker/src/logger.ts` — 3-tier logger reading `LOG_LEVEL`
+  env var. Tiers: `minimal` (init/auth + heartbeat + errors), `normal` (default;
+  per-poll summaries), `verbose` (everything incl. SOAP payloads). **Errors
+  always emit** (the `[OMSINT_ERROR][...]` tokens drive CloudWatch metric
+  filters → must never be suppressed).
+- Refactored every `console.log`/`console.error` across the worker `src/` to the
+  appropriate logger tier (index.ts, multispeakOutput.ts, sendMultiSpeak.ts,
+  cacheHelper.ts, helper.ts, s3Helpers.ts, wazeOutputter.ts, ab511Outputter.ts).
+  SOAP payloads + per-request TLS-bypass notice → `debug`; per-poll summaries →
+  `info`; startup/auth/heartbeat → `minimal`; all `console.error` → `logger.error`.
+- Added `log_level` variable to `infra-v2/variables.tf` (with validation) and
+  injected `LOG_LEVEL` into the ECS task definition env in `infra-v2/main.tf`.
+- Plumbed it through deploy: `deploy.sh` `render_tfvars` now takes a 22nd arg
+  (`log_level`), reads `LOG_LEVEL_OVERRIDE` from full-deploy.sh, and prompts in
+  its standalone interactive path. `full-deploy.sh` prompts for the level,
+  persists it in `.deployruns/<slug>.env`, shows it in the summary, and passes
+  `LOG_LEVEL_OVERRIDE` to deploy.sh.
+- Set `LOG_LEVEL=verbose` in `vitest.config.ts` so tests that assert log output
+  (ab511 dry-run console.log spies) still see `logger.debug` pass through.
+- Verified: `tsc --noEmit` clean, `pnpm build` (esbuild bundle) succeeds,
+  tofu fmt-clean for the new additions.
+
+### Log level options (also surfaced in full-deploy.sh prompt)
+- `minimal` — startup/auth confirmation + "service is still healthy" heartbeat +
+  all errors. Quietest healthy production log.
+- `normal` (default) — adds per-poll operational summaries: feed record counts,
+  batch sent/total, dispatch counts, cache-write failures, re-auth,
+  resultsLimit adjustments, device-status counts. No per-record payloads.
+- `verbose` — everything, incl. raw SOAP MultiSpeak response envelopes and the
+  per-request "Private endpoint detected — TLS bypassed" notice. Reproduces
+  the historical pre-level logging behaviour (what cobbbeta logs today).
+
+### Verification / tests
+- The 3 ab511 dry-run console-spy tests I affected now pass (via verbose test env).
+- The 14 `multiSpeakOutputter.test.ts` failures are **pre-existing** — caused by
+  the uncommitted stale-record/rate-limit branch in `multispeakOutput.ts` (in the
+  working tree before this session), NOT the logger refactor. Proven: restoring
+  HEAD's loop logic makes them pass; only the 4 live-mode tests that already
+  failed at clean HEAD remain. (This matches the note from the 07-13 session.)
+
+### Open questions
+- The new log level only takes effect after a redeploy (it's an ECS env var baked
+  into the task definition). To change level without a full redeploy, a future
+  enhancement could read `LOG_LEVEL` from the Secrets Manager config secret so it
+  can be flipped live (the worker reads the secret each restart).
+- The pre-existing `multispeakOutput.ts` stale/rate-limit logic + its 14 failing
+  tests still need follow-up (out of scope for this task).
+
+---
+
+
 Built a Tolaria vault operations guide for the OMSInt project under
 `~/src/dev_documents/`. Created:
 - `OMSInt Overview.md` — project explainer + index of all 8 ECS deployments.
